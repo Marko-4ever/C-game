@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <graphics.h>
 #include <conio.h>
 #include <time.h>
@@ -11,6 +12,7 @@ typedef struct
     int sirina;
     int visina;
     int lvStr, dsStr;
+    int score;
 }lik;
 
 typedef struct
@@ -34,13 +36,15 @@ void menu();
 void playerMove(objekti *obj, char *T);
 void drawPlayer(objekti *obj);
 void drawPrepreke(objekti *obj);
-void game(objekti *obj, float *p, char *T, int *Gs);
+void game(objekti *obj, float *p, char *T, int *Gs, FILE *f);
 void obstacleSpawn(objekti *obj);
-void gameOver();
+void gameOver(objekti *obj, FILE *f);
 
 int main()
 {
     srand(time(NULL));
+
+    FILE *f;
 
     int gameState = 0, *Gs=&gameState;
     int gd = DETECT, gm;
@@ -57,6 +61,7 @@ int main()
     obj.player.traka = 1;
     obj.player.sirina = 40;
     obj.player.visina = 20;
+    obj.player.score = 0;
 
     for (int i=0; i<6; i++)
     {
@@ -84,14 +89,14 @@ int main()
 
     while (gameState == 1)
     {
-        game(&obj, Ps, T, Gs);
+        game(&obj, Ps, T, Gs, f);
         delay(16);
 
         if (gameState == 2)
             break;
     }
 
-    gameOver();
+    gameOver(&obj, f);
 
     closegraph();
     return 0;
@@ -118,8 +123,34 @@ void menu()
     outtextxy(250, 320, "Izlaz");
 }
 
-void gameOver()
+void gameOver(objekti *obj, FILE *f)
 {
+    int Hs = 0;
+
+    f = fopen("AutoSurfer.txt", "a+");
+    if (f == NULL)
+    {
+        printf("greska");
+        exit(1);
+    }
+
+    rewind(f);
+    fscanf(f, "%d", &Hs);
+    fclose(f);
+
+    if (obj->player.score > Hs)
+    {
+        Hs = obj->player.score;
+
+        f = fopen("AutoSurfer.txt", "w+");
+
+        if (f != NULL)
+        {
+            fprintf(f, "%d", Hs);
+            fclose(f);
+        }
+    }
+
     cleardevice();
 
     settextstyle(4, 0, 5);
@@ -127,6 +158,15 @@ void gameOver()
 
     settextstyle(1, 0, 3);
     outtextxy(70, 430, "Pritisni bilo koju tipku za izlaz");
+
+    char scoretext[30];
+    sprintf(scoretext, "Score: %d", obj->player.score);
+    settextstyle(1, 0, 2);
+    outtextxy(100, 200, scoretext);
+    char highscoretext[30];
+    sprintf(highscoretext, "High Score: %d", Hs);
+    settextstyle(1, 0, 2);
+    outtextxy(100, 240, highscoretext);
 
     getch();
 }
@@ -240,10 +280,20 @@ void playerMove(objekti *obj, char *T)
     }
 }
 
-void game(objekti *obj, float *p, char *T, int *Gs)
+void game(objekti *obj, float *p, char *T, int *Gs, FILE *f)
 {
+    static float frames = 0;
     static float brojac = 0;
     static int collision = 0;
+    static float speedup = 0.2;
+
+    frames++;
+    if (frames >= 63)
+    {
+        obj->player.score++;
+        frames = 0;
+        *p += speedup;
+    }
 
     cleardevice();
 
@@ -268,11 +318,6 @@ void game(objekti *obj, float *p, char *T, int *Gs)
         if (obj->prepreka[i].aktivno == 1)
         {
             obj->prepreka[i].x -= *p;
-            if ((obj->prepreka[i].traka == obj->player.traka) && ((obj->prepreka[i].lijevaStr <= obj->player.dsStr) && (obj->prepreka[i].desnaStr >= obj->player.lvStr)))
-            {
-                collision = 1;
-            }
-
             if (obj->prepreka[i].x < -100)
             {
                 obj->prepreka[i].aktivno = 0;
@@ -282,9 +327,21 @@ void game(objekti *obj, float *p, char *T, int *Gs)
 
     drawPrepreke(obj);
 
+    for (int i=0; i<6; i++)
+    {
+        if (obj->prepreka[i].aktivno == 1)
+         {
+            if ((obj->prepreka[i].traka == obj->player.traka) && ((obj->prepreka[i].lijevaStr <= obj->player.dsStr) && (obj->prepreka[i].desnaStr >= obj->player.lvStr)))
+            {
+                collision = 1;
+            }
+        }
+    }
+
     if (collision == 1)
     {
         *Gs = 2;
     }
+
 }
 
