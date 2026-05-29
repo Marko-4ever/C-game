@@ -29,16 +29,24 @@ typedef struct
 typedef struct
 {
     lik player;
-    prepreka prepreka[6];
+    prepreka prepreka[8];
 }objekti;
 
 void menu();
+//auto surfer
 void playerMove(objekti *obj, char *T);
 void drawPlayer(objekti *obj);
 void drawPrepreke(objekti *obj);
 void game(objekti *obj, float *p, char *T, int *Gs, FILE *f);
 void obstacleSpawn(objekti *obj);
 void gameOver(objekti *obj, FILE *f);
+
+//space invaders
+void ufoMove(objekti *obj, float *p, char *T);
+void drawUfo(objekti *obj);
+void drawEnemy(objekti *obj);
+void ufoGame(objekti *obj, float *p, char *T, int *Gs);
+void enemySpawn(objekti *obj);
 
 int main()
 {
@@ -76,13 +84,22 @@ int main()
             mx = mousex();
             my = mousey();
             clearmouseclick(WM_LBUTTONDOWN);
-            if (((mx>200) && (mx<400)) && ((my>100) && (my<170)))
+            if (((mx>50) && (mx<250)) && ((my>100) && (my<170)))
             {
                 gameState = 1;
+            }
+            else if (((mx>200) && (mx<400)) && ((my>300) && (my<370)))
+            {
+                gameState = 3;
             }
         }
 
         delay(16);
+    }
+
+    if (gameState == 3)
+    {
+        return 0;
     }
 
     cleardevice();
@@ -104,18 +121,21 @@ int main()
 
 void menu()
 {
-    settextstyle(4, 0, 5);
-    outtextxy(150, 50, "Auto Surfer");
+    settextstyle(4, 0, 4);
+    outtextxy(30, 50, "Auto Surfer");
+
+    settextstyle(4, 0, 4);
+    outtextxy(300, 50, "Space Invader");
 
     setfillstyle(1,CYAN);
-    bar(200,100,400,170);
+    bar(50,100,250,170);
     settextstyle(4, 0, 4);
-    outtextxy(250, 120, "Igraj");
+    outtextxy(100, 120, "Igraj");
 
     setfillstyle(1,CYAN);
-    bar(200,200,400,270);
+    bar(350,100,550,170);
     settextstyle(4, 0, 4);
-    outtextxy(210, 220, "Trgovina");
+    outtextxy(400, 120, "Igraj");
 
     setfillstyle(1,CYAN);
     bar(200,300,400,370);
@@ -344,4 +364,3 @@ void game(objekti *obj, float *p, char *T, int *Gs, FILE *f)
     }
 
 }
-
