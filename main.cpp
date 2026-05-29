@@ -91,7 +91,8 @@ int main()
             break;
     }
 
-    getch();
+    gameOver();
+
     closegraph();
     return 0;
 }
@@ -117,6 +118,19 @@ void menu()
     outtextxy(250, 320, "Izlaz");
 }
 
+void gameOver()
+{
+    cleardevice();
+
+    settextstyle(4, 0, 5);
+    outtextxy(150, 50, "Game Over");
+
+    settextstyle(1, 0, 3);
+    outtextxy(70, 430, "Pritisni bilo koju tipku za izlaz");
+
+    getch();
+}
+
 void drawPlayer(objekti *obj)
 {
     setcolor(RED);
@@ -124,8 +138,19 @@ void drawPlayer(objekti *obj)
     ellipse(obj->player.x, obj->player.y, 0, 360, obj->player.sirina, obj->player.visina);
     floodfill(obj->player.x, obj->player.y, RED);
 
+
     obj->player.lvStr = obj->player.x-obj->player.sirina;
     obj->player.dsStr = obj->player.x+obj->player.sirina;
+
+    setcolor(LIGHTGRAY);
+    setfillstyle(1, LIGHTGRAY);
+    fillellipse(obj->player.x - 25, obj->player.y + 12, 10, 6);
+    fillellipse(obj->player.x + 25, obj->player.y + 12, 10, 6);
+
+    setcolor(CYAN);
+    setfillstyle(1, CYAN);
+    bar(obj->player.x, obj->player.y - 15, obj->player.x + 30, obj->player.y - 1);
+
 }
 
 void drawPrepreke(objekti *obj)
@@ -255,11 +280,11 @@ void game(objekti *obj, float *p, char *T, int *Gs)
         }
     }
 
+    drawPrepreke(obj);
+
     if (collision == 1)
     {
         *Gs = 2;
     }
-
-    drawPrepreke(obj);
 }
 
