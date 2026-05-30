@@ -9,4 +9,6 @@ link_directories(${CMAKE_SOURCE_DIR}/lib)
 
 add_executable(animacija animacija.cpp)
 
+target_link_options(animacija PRIVATE -static-libgcc -static-libstdc++ -static)
+
 target_link_libraries(animacija bgi gdi32 comdlg32 uuid oleaut32 ole32)
