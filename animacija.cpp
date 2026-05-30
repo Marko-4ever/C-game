@@ -29,7 +29,7 @@ typedef struct
 typedef struct
 {
     lik player;
-    prepreka prepreka[8];
+    prepreka prepreka[6], ufo[8], laser;
 }objekti;
 
 void menu();
@@ -42,11 +42,13 @@ void obstacleSpawn(objekti *obj);
 void gameOver(objekti *obj, FILE *f);
 
 //space invaders
-void ufoMove(objekti *obj, float *p, char *T);
+void ufoMove(objekti *obj, char *T);
 void drawUfo(objekti *obj);
-void drawEnemy(objekti *obj);
+void drawTarget(objekti *obj);
 void ufoGame(objekti *obj, float *p, char *T, int *Gs);
-void enemySpawn(objekti *obj);
+void ufoSpawn(objekti *obj);
+void laser(objekti *obj);
+void gameOverUfo(objekti *obj, FILE *f);
 
 int main()
 {
@@ -62,18 +64,25 @@ int main()
     float *Ps = &speed;
     char tipka = 0;
     char *T = &tipka;
+    int games = 0;
 
     objekti obj;
-    obj.player.x = 50;
+    obj.player.x = 50;//270 i 370
     obj.player.y = 240;
     obj.player.traka = 1;
     obj.player.sirina = 40;
     obj.player.visina = 20;
     obj.player.score = 0;
+    obj.laser.aktivno = 0;
 
     for (int i=0; i<6; i++)
     {
         obj.prepreka[i].aktivno = 0;
+    }
+
+    for (int i=0; i<8; i++)
+    {
+        obj.ufo[i].aktivno = 0;
     }
 
     while (gameState == 0)
@@ -87,10 +96,16 @@ int main()
             if (((mx>50) && (mx<250)) && ((my>100) && (my<170)))
             {
                 gameState = 1;
+                games = 1;
             }
             else if (((mx>200) && (mx<400)) && ((my>300) && (my<370)))
             {
                 gameState = 3;
+            }
+            else if (((mx>350) && (mx<550)) && ((my>100)&&(my<170)))
+            {
+                gameState = 4;
+                games = 2;
             }
         }
 
@@ -108,12 +123,22 @@ int main()
     {
         game(&obj, Ps, T, Gs, f);
         delay(16);
-
-        if (gameState == 2)
-            break;
     }
 
-    gameOver(&obj, f);
+    while (gameState == 4)
+    {
+        ufoGame(&obj, Ps, T, Gs);
+        delay(16);
+    }
+
+    if (games == 1)
+    {
+        gameOver(&obj, f);
+    }
+    else if (games == 2)
+    {
+        gameOverUfo(&obj, f);
+    }
 
     closegraph();
     return 0;
@@ -304,7 +329,7 @@ void game(objekti *obj, float *p, char *T, int *Gs, FILE *f)
 {
     static float frames = 0;
     static float brojac = 0;
-    static int collision = 0;
+    int collision = 0;
     static float speedup = 0.2;
 
     frames++;
@@ -360,7 +385,263 @@ void game(objekti *obj, float *p, char *T, int *Gs, FILE *f)
 
     if (collision == 1)
     {
-        *Gs = 2;
+        *Gs = 0;
     }
 
+}
+
+void drawUfo(objekti *obj)
+{
+    setcolor(LIGHTGREEN);
+    setfillstyle(1, LIGHTGREEN);
+    obj->player.lvStr = obj->player.x+220;
+    obj->player.dsStr = obj->player.x+320;
+    bar(obj->player.lvStr, obj->player.y+130, obj->player.dsStr, obj->player.y+210);
+    bar(obj->player.lvStr-20, obj->player.y+150, obj->player.lvStr, obj->player.y+230);
+    bar(obj->player.dsStr, obj->player.y+150, obj->player.dsStr+20, obj->player.y+230);
+    bar(obj->player.lvStr+30, obj->player.y+110, obj->player.dsStr-30, obj->player.y+210);
+}
+
+void ufoMove(objekti *obj, char *T)
+{
+    while (kbhit())
+    {
+        *T = getch();
+    }
+
+    if (*T == 'a')
+    {
+        obj->player.x -= 15;
+        *T = 0;
+    }
+    else if (*T == 'd')
+    {
+        obj->player.x += 15;
+        *T = 0;
+    }
+
+    if (obj->player.x < -200)
+    {
+        obj->player.x = -200;
+    }
+    else if (obj->player.x > 300)
+    {
+        obj->player.x = 300;
+    }
+}
+
+void ufoSpawn(objekti *obj)
+{
+    static int lastLane = -1;
+
+    for (int i=0; i<8; i++)
+    {
+        if (obj->ufo[i].aktivno == 0)
+        {
+            int obstacleLane = rand()%3;
+
+            while (obstacleLane == lastLane)
+            {
+                obstacleLane = rand()%3;
+            }
+
+            lastLane = obstacleLane;
+
+            obj->ufo[i].aktivno = 1;
+            obj->ufo[i].x = 700;
+            obj->ufo[i].traka = obstacleLane;
+            obj->ufo[i].sirina = 20;
+            obj->ufo[i].visina = 30;
+
+            if (obstacleLane == 0)
+            {
+                obj->ufo[i].y = 30;
+            }
+            else if (obstacleLane == 1)
+            {
+                obj->ufo[i].y = 90;
+            }
+            else
+                obj->ufo[i].y = 150;
+
+            break;
+        }
+    }
+}
+
+void drawTarget(objekti *obj)
+{
+    for (int i=0; i<8; i++)
+    {
+        if (obj->ufo[i].aktivno == 1)
+        {
+            if (obj->ufo[i].traka == 0)
+            {
+                setcolor(RED);
+                setfillstyle(1, RED);
+            }
+            else if (obj->ufo[i].traka == 1)
+            {
+                setcolor(GREEN);
+                setfillstyle(1, GREEN);
+            }
+            else if (obj->ufo[i].traka == 2)
+            {
+                setcolor(BLUE);
+                setfillstyle(1, BLUE);
+            }
+
+            obj->ufo[i].lijevaStr = obj->ufo[i].x-obj->ufo[i].sirina;
+            obj->ufo[i].desnaStr = obj->ufo[i].x+obj->ufo[i].sirina;
+            pieslice(obj->ufo[i].x, obj->ufo[i].y,0, 360, obj->ufo[i].sirina);
+        }
+    }
+}
+
+void laser(objekti *obj, char *T)
+{
+    while (kbhit())
+    {
+        *T = getch();
+    }
+
+    if (*T == ' ' && obj->laser.aktivno == 0)
+    {
+        obj->laser.aktivno = 1;
+        *T = 0;
+        obj->laser.lijevaStr = (obj->player.lvStr+obj->player.dsStr)/2 - 5;
+        obj->laser.desnaStr = (obj->player.lvStr+obj->player.dsStr)/2 + 5;
+        obj->laser.y = obj->player.y+60;
+    }
+
+    if (obj->laser.aktivno == 1)
+    {
+        setcolor(CYAN);
+        setfillstyle(1, CYAN);
+        bar(obj->laser.lijevaStr, obj->laser.y, obj->laser.desnaStr, obj->laser.y+50);
+    }
+}
+
+void gameOverUfo(objekti *obj, FILE *f)
+{
+    int Hs = 0;
+
+    f = fopen("SpaceInvaders.txt", "a+");
+    if (f == NULL)
+    {
+        printf("greska");
+        exit(1);
+    }
+
+    rewind(f);
+    fscanf(f, "%d", &Hs);
+    fclose(f);
+
+    if (obj->player.score > Hs)
+    {
+        Hs = obj->player.score;
+
+        f = fopen("SpaceInvaders.txt", "w+");
+
+        if (f != NULL)
+        {
+            fprintf(f, "%d", Hs);
+            fclose(f);
+        }
+    }
+
+    cleardevice();
+
+    settextstyle(4, 0, 5);
+    outtextxy(150, 50, "Game Over");
+
+    settextstyle(1, 0, 3);
+    outtextxy(70, 430, "Pritisni bilo koju tipku za izlaz");
+
+    char scoretext[30];
+    sprintf(scoretext, "Score: %d", obj->player.score);
+    settextstyle(1, 0, 2);
+    outtextxy(100, 200, scoretext);
+    char highscoretext[30];
+    sprintf(highscoretext, "High Score: %d", Hs);
+    settextstyle(1, 0, 2);
+    outtextxy(100, 240, highscoretext);
+
+    getch();
+}
+
+void ufoGame(objekti *obj, float *p, char *T, int *Gs)
+{
+    static float brojac = 0;
+    int collided = 0;
+
+    cleardevice();
+
+    ufoMove(obj, T);
+    drawUfo(obj);
+
+    brojac += *p;
+
+    if (brojac >= 100)
+    {
+        ufoSpawn(obj);
+        brojac = 0;
+    }
+
+    for (int i=0; i<8; i++)
+    {
+        if (obj->ufo[i].aktivno == 1)
+        {
+            obj->ufo[i].x -= *p;
+            if (obj->ufo[i].x < -60)
+            {
+                obj->ufo[i].aktivno = 0;
+            }
+        }
+    }
+
+    drawTarget(obj);
+
+    laser(obj, T);
+
+    if (obj->laser.aktivno == 1)
+    {
+        obj->laser.y -= *p;
+        if (obj->laser.y < -100)
+        {
+            obj->laser.aktivno = 0;
+        }
+    }
+
+    if (obj->laser.aktivno == 1)
+    {
+        for (int i=0; i<8; i++)
+        {
+            if (obj->ufo[i].aktivno == 1)
+            {
+                if (((obj->ufo[i].lijevaStr <= obj->laser.desnaStr) && (obj->ufo[i].desnaStr >= obj->laser.lijevaStr)) && (obj->ufo[i].y+obj->ufo[i].sirina >= obj->laser.y))
+                {
+                    collided = i;
+                    obj->laser.aktivno = 0;
+                    obj->player.score++;
+                    obj->ufo[collided].aktivno = 0;
+                    break;
+                }
+            }
+        }
+    }
+
+    setcolor(WHITE);
+    settextstyle(4, 0, 2);
+    outtextxy(400, 440, "pritisni x za izlaz");
+
+    while (kbhit())
+    {
+        *T = getch();
+    }
+
+    if (*T == 'x')
+    {
+        *Gs = 2;
+    }
 }

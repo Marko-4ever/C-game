@@ -7,6 +7,6 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 
-add_executable(animacija main.cpp)
+add_executable(animacija animacija.cpp)
 
 target_link_libraries(animacija bgi gdi32 comdlg32 uuid oleaut32 ole32)
