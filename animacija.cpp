@@ -622,9 +622,14 @@ void ufoGame(objekti *obj, float *p, char *T, int *Gs)
                 if (((obj->ufo[i].lijevaStr <= obj->laser.desnaStr) && (obj->ufo[i].desnaStr >= obj->laser.lijevaStr)) && (obj->ufo[i].y+obj->ufo[i].sirina >= obj->laser.y))
                 {
                     collided = i;
+                    
+                    setcolor(RED);
+                    settextstyle(2, 0, 6);
+                    outtextxy(obj->ufo[i].x, obj->ufo[i].y, "*");
                     obj->laser.aktivno = 0;
                     obj->player.score++;
                     obj->ufo[collided].aktivno = 0;
+                    delay(32);
                     break;
                 }
             }
