@@ -37,7 +37,7 @@ void menu();
 void playerMove(objekti *obj, char *T);
 void drawPlayer(objekti *obj);
 void drawPrepreke(objekti *obj);
-void game(objekti *obj, float *p, char *T, int *Gs, FILE *f);
+void game(objekti *obj, float *p, char *T, int *Gs, FILE *f, float *Fr, float *Br, float *Su);
 void obstacleSpawn(objekti *obj);
 void gameOver(objekti *obj, FILE *f);
 
@@ -45,7 +45,7 @@ void gameOver(objekti *obj, FILE *f);
 void ufoMove(objekti *obj, char *T);
 void drawUfo(objekti *obj);
 void drawTarget(objekti *obj);
-void ufoGame(objekti *obj, float *p, char *T, int *Gs);
+void ufoGame(objekti *obj, float *p, char *T, int *Gs, float *Ubr);
 void ufoSpawn(objekti *obj);
 void laser(objekti *obj);
 void gameOverUfo(objekti *obj, FILE *f);
@@ -65,79 +65,111 @@ int main()
     char tipka = 0;
     char *T = &tipka;
     int games = 0;
+    float frames = 0;
+    float brojac = 0;
+    float speedup = 0.2;
+    float *Fr = &frames, *Br = &brojac, *Su = &speedup;
+
+    float ufobrojac = 0;
+    float *UBr = &ufobrojac;
+
 
     objekti obj;
-    obj.player.x = 50;//270 i 370
-    obj.player.y = 240;
-    obj.player.traka = 1;
-    obj.player.sirina = 40;
-    obj.player.visina = 20;
-    obj.player.score = 0;
-    obj.laser.aktivno = 0;
 
-    for (int i=0; i<6; i++)
-    {
-        obj.prepreka[i].aktivno = 0;
-    }
 
-    for (int i=0; i<8; i++)
+    while (gameState != 3)
     {
-        obj.ufo[i].aktivno = 0;
-    }
+        cleardevice();
 
-    while (gameState == 0)
-    {
-        menu();
-        if (ismouseclick(WM_LBUTTONDOWN))
+        if (gameState == 0)
         {
-            mx = mousex();
-            my = mousey();
-            clearmouseclick(WM_LBUTTONDOWN);
-            if (((mx>50) && (mx<250)) && ((my>100) && (my<170)))
+            menu();
+            if (ismouseclick(WM_LBUTTONDOWN))
             {
-                gameState = 1;
-                games = 1;
+                mx = mousex();
+                my = mousey();
+                clearmouseclick(WM_LBUTTONDOWN);
+                if (((mx>50) && (mx<250)) && ((my>100) && (my<170)))
+                {
+                    obj.player.x = 50;//270 i 370
+                    obj.player.y = 240;
+                    obj.player.traka = 1;
+                    obj.player.sirina = 40;
+                    obj.player.visina = 20;
+                    obj.player.score = 0;
+                    obj.laser.aktivno = 0;
+                    speed = 5;
+                    frames = 0;
+                    brojac = 0;
+                    speedup = 0.2;
+                    tipka = 0;
+                    for (int i=0; i<6; i++)
+                    {
+                        obj.prepreka[i].aktivno = 0;
+                    }
+
+                    for (int i=0; i<8; i++)
+                    {
+                        obj.ufo[i].aktivno = 0;
+                    }
+                    gameState = 1;
+                    games = 1;
+                }
+                else if (((mx>200) && (mx<400)) && ((my>300) && (my<370)))
+                {
+                    gameState = 3;
+                }
+                else if (((mx>350) && (mx<550)) && ((my>100)&&(my<170)))
+                {
+                    obj.player.x = 50;//270 i 370
+                    obj.player.y = 240;
+                    obj.player.traka = 1;
+                    obj.player.sirina = 40;
+                    obj.player.visina = 20;
+                    obj.player.score = 0;
+                    obj.laser.aktivno = 0;
+                    speed = 5;
+                    ufobrojac = 0;
+                    tipka = 0;
+                    for (int i=0; i<6; i++)
+                    {
+                        obj.prepreka[i].aktivno = 0;
+                    }
+
+                    for (int i=0; i<8; i++)
+                    {
+                        obj.ufo[i].aktivno = 0;
+                    }
+                    gameState = 4;
+                    games = 2;
+                }
             }
-            else if (((mx>200) && (mx<400)) && ((my>300) && (my<370)))
+        }
+        else if (gameState == 3)
+        {
+            return 0;
+        }
+        else if (gameState == 1)
+        {
+            game(&obj, Ps, T, Gs, f, Fr, Br, Su);
+            if (gameState == 0)
             {
-                gameState = 3;
+                gameOver(&obj, f);
+                games = 0;
             }
-            else if (((mx>350) && (mx<550)) && ((my>100)&&(my<170)))
+        }
+        else if (gameState == 4)
+        {
+            ufoGame(&obj, Ps, T, Gs, UBr);
+            if (gameState == 2)
             {
-                gameState = 4;
-                games = 2;
+                gameOverUfo(&obj, f);
+                gameState = 0;
+                games = 0;
             }
         }
 
         delay(16);
-    }
-
-    if (gameState == 3)
-    {
-        return 0;
-    }
-
-    cleardevice();
-
-    while (gameState == 1)
-    {
-        game(&obj, Ps, T, Gs, f);
-        delay(16);
-    }
-
-    while (gameState == 4)
-    {
-        ufoGame(&obj, Ps, T, Gs);
-        delay(16);
-    }
-
-    if (games == 1)
-    {
-        gameOver(&obj, f);
-    }
-    else if (games == 2)
-    {
-        gameOverUfo(&obj, f);
     }
 
     closegraph();
@@ -325,22 +357,19 @@ void playerMove(objekti *obj, char *T)
     }
 }
 
-void game(objekti *obj, float *p, char *T, int *Gs, FILE *f)
+void game(objekti *obj, float *p, char *T, int *Gs, FILE *f, float *Fr, float *Br, float *Su)
 {
-    static float frames = 0;
-    static float brojac = 0;
     int collision = 0;
-    static float speedup = 0.2;
 
-    frames++;
-    if (frames >= 63)
+    (*Fr)++;
+    if (*Fr >= 63)
     {
         obj->player.score++;
-        frames = 0;
-        *p += speedup;
+        *Fr = 0;
+        (*p) += *Su;
     }
 
-    cleardevice();
+    //cleardevice();
 
     setcolor(WHITE);
     line(0, 160, 640, 160);
@@ -350,12 +379,12 @@ void game(objekti *obj, float *p, char *T, int *Gs, FILE *f)
 
     drawPlayer(obj);
 
-    brojac += *p;
+    *Br += *p;
 
-    if (brojac >= 200)
+    if (*Br >= 200)
     {
         obstacleSpawn(obj);
-        brojac = 0;
+        *Br = 0;
     }
 
     for (int i=0; i<6; i++)
@@ -570,22 +599,21 @@ void gameOverUfo(objekti *obj, FILE *f)
     getch();
 }
 
-void ufoGame(objekti *obj, float *p, char *T, int *Gs)
+void ufoGame(objekti *obj, float *p, char *T, int *Gs, float *UBr)
 {
-    static float brojac = 0;
     int collided = 0;
 
-    cleardevice();
+    //cleardevice();
 
     ufoMove(obj, T);
     drawUfo(obj);
 
-    brojac += *p;
+    (*UBr) += *p;
 
-    if (brojac >= 100)
+    if (*UBr >= 100)
     {
         ufoSpawn(obj);
-        brojac = 0;
+        *UBr = 0;
     }
 
     for (int i=0; i<8; i++)
@@ -619,17 +647,22 @@ void ufoGame(objekti *obj, float *p, char *T, int *Gs)
         {
             if (obj->ufo[i].aktivno == 1)
             {
-                if (((obj->ufo[i].lijevaStr <= obj->laser.desnaStr) && (obj->ufo[i].desnaStr >= obj->laser.lijevaStr)) && (obj->ufo[i].y+obj->ufo[i].sirina >= obj->laser.y))
+                if (((obj->ufo[i].lijevaStr <= obj->laser.desnaStr) && (obj->ufo[i].desnaStr >= obj->laser.lijevaStr)) && (obj->ufo[i].y+obj->ufo[i].sirina >= obj->laser.y) && (obj->ufo[i].y-obj->ufo[i].sirina <= obj->laser.y+50))
                 {
                     collided = i;
-                    
-                    setcolor(RED);
-                    settextstyle(2, 0, 6);
-                    outtextxy(obj->ufo[i].x, obj->ufo[i].y, "*");
                     obj->laser.aktivno = 0;
                     obj->player.score++;
                     obj->ufo[collided].aktivno = 0;
-                    delay(32);
+                    cleardevice();
+                    ufoMove(obj, T);
+                    drawUfo(obj);
+                    drawTarget(obj);
+
+                    setcolor(RED);
+                    settextstyle(0, 0, 10);
+                    outtextxy(obj->ufo[collided].x - 20, obj->ufo[collided].y - 20, "*");
+
+                    delay(100);
                     break;
                 }
             }
